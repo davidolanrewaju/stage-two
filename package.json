@@ -7,8 +7,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "db-build": "prisma generate && prisma migrate deploy",
-    "pm": "prisma migrate dev"
+    "db-build": "prisma generate && prisma migrate dev --name update"
   },
   "keywords": [],
   "author": "",
