@@ -1,6 +1,5 @@
 // server.js
 import dotenv from "dotenv";
-// import app from "./server/app.js";
 import express from "express";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
@@ -8,8 +7,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./server/routes/authRoutes.js";
 
 dotenv.config();
-const port = process.env.PORT || 3000;
-
+const port = process.env.PORT;
 
 const app = express();
 
