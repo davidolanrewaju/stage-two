@@ -14,7 +14,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/auth', authRoutes);
 
 app.get('/', (req, res) => {
-    res.send("Welcome!")
+    res.json({
+        message: "Welcome!",
+    });
 });
 
 export default app;
