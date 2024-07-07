@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "build": "npx prisma generate && prisma migrate deploy",
+    "vercel-build": "npx prisma generate && prisma migrate deploy",
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "jest --watch-all"
