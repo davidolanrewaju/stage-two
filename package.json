@@ -5,9 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "build": "npx prisma generate && prisma migrate deploy",
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "prisma-build": "prisma generate && prisma migrate dev --name update",
     "test": "jest --watch-all"
   },
   "keywords": [],
