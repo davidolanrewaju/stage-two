@@ -5,10 +5,10 @@ import { PrismaClient } from "@prisma/client";
 
 dotenv.config();
 const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET_KEY;
 
 export const userRegistration = async (req, res) => {
     const {firstName, lastName, email, password, phone} = req.body;
-    const JWT_SECRET = process.env.JWT_SECRET_KEY;
 
     try {
         const saltRounds = 15;
@@ -19,7 +19,7 @@ export const userRegistration = async (req, res) => {
                 firstName,
                 lastName,
                 email,
-                hashedPassword,
+                password: hashedPassword,
                 phone,
             },
         });
@@ -36,7 +36,7 @@ export const userRegistration = async (req, res) => {
             }
         });
 
-        const token = jwt.sign({userId:user.id}, JWT_SECRET, {expiresIn: '3h', algorithm: 'RS256'});
+        const token = jwt.sign({userId:user.id}, JWT_SECRET, {expiresIn: '3h', algorithm: 'HS256'});
         res.cookie("auth_token", token, {httpOnly: true});
 
         res.status(201).json({
@@ -66,7 +66,7 @@ export const userRegistration = async (req, res) => {
 export const userLogin = async (req, res) => {
     const {email, password} = req.body;
     try {
-        const user = await prismaClient.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({ where: { email } });
     
         if (!user || !await bcrypt.compare(password, user.password)) {
           return res.status(401).json({
@@ -76,9 +76,8 @@ export const userLogin = async (req, res) => {
           });
         }
     
-        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '2h' }); // Change expiresIn to 2 hours
-    
-        res.cookie('auth_token', token, { httpOnly: true });
+        const token = jwt.sign({userId:user.id}, JWT_SECRET, {expiresIn: '3h', algorithm: 'HS256'});
+        res.cookie("auth_token", token, {httpOnly: true});
     
         res.status(200).json({
           status: 'success',
