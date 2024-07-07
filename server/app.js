@@ -7,9 +7,12 @@ import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
 
-app.use(cookieParser);
+app.use(cookieParser());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
 app.use('/auth', authRoutes);
+
 app.get('/', (req, res) => {
     res.send("Welcome!")
 });
