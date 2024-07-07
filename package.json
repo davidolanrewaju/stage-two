@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@vercel/postgres": "^0.9.0",
+    "uri-js": "^4.4.1"
+  }
+}
