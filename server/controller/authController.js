@@ -37,7 +37,6 @@ export const userRegistration = async (req, res) => {
         });
 
         const token = jwt.sign({userId:user.id}, JWT_SECRET, {expiresIn: '3h', algorithm: 'HS256'});
-        res.cookie("auth_token", token, {httpOnly: true});
 
         res.status(201).json({
             status: "success",
@@ -77,7 +76,6 @@ export const userLogin = async (req, res) => {
         }
     
         const token = jwt.sign({userId:user.id}, JWT_SECRET, {expiresIn: '3h', algorithm: 'HS256'});
-        res.cookie("auth_token", token, {httpOnly: true});
     
         res.status(200).json({
           status: 'success',
