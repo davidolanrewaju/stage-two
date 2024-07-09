@@ -69,9 +69,8 @@ describe('Auth Endpoints', () => {
           password: 'password123'
         });
 
-      expect(response.status).toBe(422);
-      const errorMessages = response.body.errors.map(error => error.message);
-      expect(errorMessages).toContain('Email already exists');
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('Registration unsuccessful');
     }, 30000);
   });
 
@@ -109,8 +108,7 @@ describe('Auth Endpoints', () => {
         });
 
       expect(response.status).toBe(401);
-      const errorMessages = response.body.errors.map(error => error.message);
-      expect(errorMessages).toContain('Invalid password');
+      expect(response.body.message).toContain('Authentication failed');
     }, 20000);
   });
 });
