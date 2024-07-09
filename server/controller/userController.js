@@ -33,20 +33,20 @@ export const getUserById = async (req, res) => {
 
     const organisations = await prisma.organisation.findMany({
       where: {
-        members: {
+        users: {
           some: {
             userId: loggedInUserId,
           },
         },
       },
       include: {
-        members: true,
+        users: true,
       },
     });
 
     let userFound = null;
     for (const org of organisations) {
-      const user = org.members.find((member) => member.userId === userId);
+      const user = org.users.find((member) => member.userId === userId);
       if (user) {
         userFound = await prisma.user.findUnique({ where: { id: userId } });
         break;
@@ -60,7 +60,7 @@ export const getUserById = async (req, res) => {
         statusCode: 404,
       });
     }
-    
+
     res.status(200).json({
       status: "success",
       message: "User retrieved successfully",
@@ -73,6 +73,7 @@ export const getUserById = async (req, res) => {
       },
     });
   } catch (error) {
+    console.log(error);
     res.status(400).json({
       status: "Bad Request",
       message: "Client error",
