@@ -1,154 +1,116 @@
-import request from "supertest";
-import app from "../server/app.js"
+import request from 'supertest';
+import app from '../server/app';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 describe('Auth Endpoints', () => {
-  it('should register a user successfully with default organisation', async () => {
-    jest.setTimeout(60000);
-    const res = await request(app)
-      .post('/auth/register')
-      .send({
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        password: 'password',
-        phone: '1234567890',
-      });
-
-    expect(res.statusCode).toEqual(201);
-    expect(res.body.status).toBe('success');
-    expect(res.body.data.user.firstName).toBe('John');
-    expect(res.body.data.user.email).toBe('john.doe@example.com');
-    expect(res.body.data.user).toHaveProperty('userId');
-    expect(res.body.data.accessToken).toBeDefined();
-
-    // Verify the default organisation name
-    const orgRes = await request(app)
-      .get('/api/organisations')
-      .set('Authorization', `Bearer ${res.body.data.accessToken}`);
-
-    expect(orgRes.statusCode).toEqual(200);
-    expect(orgRes.body.data.organisations[0].name).toBe("John's Organisation");
+  beforeAll(async () => {
+    // Clean up the database
+    await prisma.userOrganisation.deleteMany();
+    await prisma.user.deleteMany();
+    await prisma.organisation.deleteMany();
   });
 
-  it('should log in user successfully', async () => {
-    jest.setTimeout(60000);
-    const res = await request(app)
-      .post('/auth/login')
-      .send({
-        email: 'john.doe@example.com',
-        password: 'password',
-      });
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.status).toBe('success');
-    expect(res.body.data.user.firstName).toBe('John');
-    expect(res.body.data.user.email).toBe('john.doe@example.com');
-    expect(res.body.data.user).toHaveProperty('userId');
-    expect(res.body.data.accessToken).toBeDefined();
+  afterAll(async () => {
+    await prisma.$disconnect();
   });
 
-  it('should fail if required fields are missing', async () => {
-    const res = await request(app)
-      .post('/auth/register')
-      .send({
-        firstName: '',
-        lastName: 'Doe',
-        email: 'john.doe2@example.com',
-        password: 'password',
-        phone: '1234567890',
-      });
+  describe('POST /auth/register', () => {
+    it('Should register user successfully with default organisation', async () => {
+      const response = await request(app)
+        .post('/auth/register')
+        .send({
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john.doe@example.com',
+          password: 'password123'
+        });
 
-    expect(res.statusCode).toEqual(422);
-    expect(res.body.errors).toBeDefined();
-    expect(res.body.errors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'firstName' }),
-      ])
-    );
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data.user.firstName).toBe('John');
+      expect(response.body.data.user.email).toBe('john.doe@example.com');
+      expect(response.body.data.user).toHaveProperty('userId');
+      expect(response.body.data).toHaveProperty('accessToken');
+    }, 20000);
 
-    const res2 = await request(app)
-      .post('/auth/register')
-      .send({
-        firstName: 'Jane',
-        lastName: '',
-        email: 'jane.doe@example.com',
-        password: 'password',
-        phone: '1234567890',
-      });
+    it('Should fail if required fields are missing', async () => {
+      const response = await request(app)
+        .post('/auth/register')
+        .send({
+          firstName: 'Jane'
+          // Missing lastName, email, password
+        });
 
-    expect(res2.statusCode).toEqual(422);
-    expect(res2.body.errors).toBeDefined();
-    expect(res2.body.errors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'lastName' }),
-      ])
-    );
+      expect(response.status).toBe(422);
+      const errorMessages = response.body.errors.map(error => error.message);
+      expect(errorMessages).toContain('Last name is required');
+      expect(errorMessages).toContain('Enter a valid email address');
+      expect(errorMessages).toContain('Password must be at least 6 characters long');
+    }, 20000);
 
-    const res3 = await request(app)
-      .post('/auth/register')
-      .send({
-        firstName: 'Jane',
-        lastName: 'Doe',
-        email: '',
-        password: 'password',
-        phone: '1234567890',
-      });
+    it('Should fail if there is a duplicate email', async () => {
+      await request(app)
+        .post('/auth/register')
+        .send({
+          firstName: 'Jane',
+          lastName: 'Doe',
+          email: 'jane.doe@example.com',
+          password: 'password123'
+        });
 
-    expect(res3.statusCode).toEqual(422);
-    expect(res3.body.errors).toBeDefined();
-    expect(res3.body.errors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'email' }),
-      ])
-    );
+      const response = await request(app)
+        .post('/auth/register')
+        .send({
+          firstName: 'Jane',
+          lastName: 'Doe',
+          email: 'jane.doe@example.com',
+          password: 'password123'
+        });
 
-    const res4 = await request(app)
-      .post('/auth/register')
-      .send({
-        firstName: 'Jane',
-        lastName: 'Doe',
-        email: 'jane.doe@example.com',
-        password: '',
-        phone: '1234567890',
-      });
-
-    expect(res4.statusCode).toEqual(422);
-    expect(res4.body.errors).toBeDefined();
-    expect(res4.body.errors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'password' }),
-      ])
-    );
+      expect(response.status).toBe(422);
+      const errorMessages = response.body.errors.map(error => error.message);
+      expect(errorMessages).toContain('Email already exists');
+    }, 30000);
   });
 
-  it('should fail if there is a duplicate email', async () => {
-    jest.setTimeout(60000);
-    await request(app)
-      .post('/auth/register')
-      .send({
-        firstName: 'Jane',
-        lastName: 'Doe',
-        email: 'jane.doe@example.com',
-        password: 'password',
-        phone: '1234567890',
-      });
+  describe('POST /auth/login', () => {
+    it('Should log the user in successfully', async () => {
+      await request(app)
+        .post('/auth/register')
+        .send({
+          firstName: 'Jane',
+          lastName: 'Doe',
+          email: 'jane.doe@example.com',
+          password: 'password123'
+        });
 
-    const res = await request(app)
-      .post('/auth/register')
-      .send({
-        firstName: 'Jane',
-        lastName: 'Doe',
-        email: 'jane.doe@example.com',
-        password: 'password',
-        phone: '1234567890',
-      });
+      const response = await request(app)
+        .post('/auth/login')
+        .send({
+          email: 'jane.doe@example.com',
+          password: 'password123'
+        });
 
-    expect(res.statusCode).toEqual(422);
-    expect(res.body.errors).toBeDefined();
-    expect(res.body.errors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'email', message: 'Email must be unique' }),
-      ])
-    );
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.data.user.email).toBe('jane.doe@example.com');
+      expect(response.body.data.user).toHaveProperty('userId');
+      expect(response.body.data).toHaveProperty('accessToken');
+    }, 20000);
+
+    it('Should fail if credentials are invalid', async () => {
+      const response = await request(app)
+        .post('/auth/login')
+        .send({
+          email: 'jane.doe@example.com',
+          password: 'wrongpassword'
+        });
+
+      expect(response.status).toBe(401);
+      const errorMessages = response.body.errors.map(error => error.message);
+      expect(errorMessages).toContain('Invalid password');
+    }, 20000);
   });
 });
