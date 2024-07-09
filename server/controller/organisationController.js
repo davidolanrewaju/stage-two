@@ -101,7 +101,11 @@ export const getOranisationById = async (req, res) => {
     res.status(200).json({
       status: "success",
       message: "Organisation retrieved successfully",
-      data: organisation,
+      data: {
+        orgId: organisation.id,
+        name: organisation.name,
+        description: organisation.description,
+      },
     });
   } catch (error) {
     res.status(400).json({
