@@ -11,8 +11,8 @@ export const registerValidationRules = () => {
 
 export const loginValidationRules = () => {
     return [
-        body('email').trim().isEmail().withMessage('Enter a valid email address'),
-        body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+        body('email').trim().isEmail().withMessage('Invalid email'),
+        body('password').isLength({ min: 6 }).withMessage('Invalid password'),
     ];
 }
 
